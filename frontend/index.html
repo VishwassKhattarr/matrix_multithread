@@ -4,7 +4,10 @@
     <title>Matrix Multithreading</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body { font-family: Arial; }
+        body {
+            font-family: Arial;
+            margin: 20px;
+        }
 
         #loader {
             display: none;
@@ -53,54 +56,56 @@ async function run() {
     const loader = document.getElementById("loader");
     const progress = document.getElementById("progress");
 
-    // UI changes
+    // UI start
     btn.disabled = true;
     loader.style.display = "block";
-    progress.innerText = "Starting...";
+    progress.innerText = "Running experiment...";
 
-    const results = [];
-
-    // simulate progress per thread
-    for (let t = 1; t <= 8; t++) {
-        progress.innerText = `Running with ${t} threads...`;
-
+    try {
         const res = await fetch('/run', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ size: Number(size), totalTasks: Number(totalTasks) })
+            body: JSON.stringify({
+                size: Number(size),
+                totalTasks: Number(totalTasks)
+            })
         });
 
         const data = await res.json();
-        results.push(data[t-1]); // take corresponding thread result
+
+        progress.innerText = "Completed";
+
+        const threads = data.map(d => d.threads);
+        const times = data.map(d => d.time);
+
+        // Table
+        let html = "<tr><th>Threads</th><th>Time (sec)</th></tr>";
+        data.forEach(d => {
+            html += `<tr><td>${d.threads}</td><td>${d.time}</td></tr>`;
+        });
+        document.getElementById("table").innerHTML = html;
+
+        // Graph
+        if (chart) chart.destroy();
+
+        chart = new Chart(document.getElementById('chart'), {
+            type: 'line',
+            data: {
+                labels: threads,
+                datasets: [{
+                    label: 'Execution Time',
+                    data: times
+                }]
+            }
+        });
+
+    } catch (err) {
+        progress.innerText = "Error occurred";
+        console.error(err);
     }
 
+    // UI end
     loader.style.display = "none";
-    progress.innerText = "Completed";
-
-    const threads = results.map(d => d.threads);
-    const times = results.map(d => d.time);
-
-    // Table
-    let html = "<tr><th>Threads</th><th>Time (sec)</th></tr>";
-    results.forEach(d => {
-        html += `<tr><td>${d.threads}</td><td>${d.time}</td></tr>`;
-    });
-    document.getElementById("table").innerHTML = html;
-
-    // Graph
-    if (chart) chart.destroy();
-
-    chart = new Chart(document.getElementById('chart'), {
-        type: 'line',
-        data: {
-            labels: threads,
-            datasets: [{
-                label: 'Execution Time',
-                data: times
-            }]
-        }
-    });
-
     btn.disabled = false;
 }
 </script>
