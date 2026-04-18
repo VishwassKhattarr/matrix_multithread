@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Matrix Multithreading</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+<h2>Execution Time vs Threads</h2>
+<button onclick="run()">Run</button>
+
+<canvas id="chart"></canvas>
+
+<table border="1" id="table"></table>
+
+<script>
+async function run() {
+    const res = await fetch('/run');
+    const data = await res.json();
+
+    const threads = data.map(d => d.threads);
+    const times = data.map(d => d.time);
+
+    // Table
+    let html = "<tr><th>Threads</th><th>Time</th></tr>";
+    data.forEach(d => {
+        html += `<tr><td>${d.threads}</td><td>${d.time}</td></tr>`;
+    });
+    document.getElementById("table").innerHTML = html;
+
+    // Graph
+    new Chart(document.getElementById('chart'), {
+        type: 'line',
+        data: {
+            labels: threads,
+            datasets: [{
+                label: 'Execution Time',
+                data: times
+            }]
+        }
+    });
+}
+</script>
+
+</body>
+</html>
