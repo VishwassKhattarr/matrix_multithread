@@ -3,6 +3,24 @@
 <head>
     <title>Matrix Multithreading</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: Arial; }
+
+        #loader {
+            display: none;
+            font-weight: bold;
+            color: blue;
+        }
+
+        #progress {
+            margin-top: 10px;
+            font-weight: bold;
+        }
+
+        button:disabled {
+            background: gray;
+        }
+    </style>
 </head>
 <body>
 
@@ -14,7 +32,10 @@
 <label>Number of Multiplications:</label>
 <input type="number" id="tasks" value="20"><br><br>
 
-<button onclick="run()">Run Experiment</button>
+<button id="runBtn" onclick="run()">Run Experiment</button>
+
+<p id="loader">Processing... Please wait ⏳</p>
+<p id="progress"></p>
 
 <h3>Results</h3>
 <table border="1" id="table"></table>
@@ -28,20 +49,40 @@ async function run() {
     const size = document.getElementById("size").value;
     const totalTasks = document.getElementById("tasks").value;
 
-    const res = await fetch('/run', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ size: Number(size), totalTasks: Number(totalTasks) })
-    });
+    const btn = document.getElementById("runBtn");
+    const loader = document.getElementById("loader");
+    const progress = document.getElementById("progress");
 
-    const data = await res.json();
+    // UI changes
+    btn.disabled = true;
+    loader.style.display = "block";
+    progress.innerText = "Starting...";
 
-    const threads = data.map(d => d.threads);
-    const times = data.map(d => d.time);
+    const results = [];
+
+    // simulate progress per thread
+    for (let t = 1; t <= 8; t++) {
+        progress.innerText = `Running with ${t} threads...`;
+
+        const res = await fetch('/run', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ size: Number(size), totalTasks: Number(totalTasks) })
+        });
+
+        const data = await res.json();
+        results.push(data[t-1]); // take corresponding thread result
+    }
+
+    loader.style.display = "none";
+    progress.innerText = "Completed";
+
+    const threads = results.map(d => d.threads);
+    const times = results.map(d => d.time);
 
     // Table
     let html = "<tr><th>Threads</th><th>Time (sec)</th></tr>";
-    data.forEach(d => {
+    results.forEach(d => {
         html += `<tr><td>${d.threads}</td><td>${d.time}</td></tr>`;
     });
     document.getElementById("table").innerHTML = html;
@@ -59,6 +100,8 @@ async function run() {
             }]
         }
     });
+
+    btn.disabled = false;
 }
 </script>
 
