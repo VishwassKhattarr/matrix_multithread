@@ -26,7 +26,9 @@ function runThreads(threadCount, size, totalTasks) {
         }
     });
 }
-
+app.get('/', (req, res) => {
+    res.send("Server is alive ");
+});
 app.get('/run', async (req, res) => {
     const results = [];
     const size = 300; // scaled size
