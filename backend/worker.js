@@ -1,19 +1,11 @@
-export function generateMatrix(n) {
-    return Array.from({ length: n }, () =>
-        Array.from({ length: n }, () => Math.random())
-    );
-}
+import { parentPort } from 'worker_threads';
+import { generateMatrix, multiply } from './matrix.js';
 
-export function multiply(A, B) {
-    const n = A.length;
-    const result = Array.from({ length: n }, () => Array(n).fill(0));
-
-    for (let i = 0; i < n; i++) {
-        for (let j = 0; j < n; j++) {
-            for (let k = 0; k < n; k++) {
-                result[i][j] += A[i][k] * B[k][j];
-            }
-        }
+parentPort.on('message', ({ size, count }) => {
+    for (let i = 0; i < count; i++) {
+        const A = generateMatrix(size);
+        const B = generateMatrix(size);
+        multiply(A, B);
     }
-    return result;
-}
+    parentPort.postMessage("done");
+});

@@ -1,9 +1,18 @@
 import express from 'express';
 import { Worker } from 'worker_threads';
-import os from 'os';
+import path from 'path';
 
 const app = express();
 
+app.use(express.json());
+app.use(express.static('frontend')); // serve frontend
+
+// Root route (important)
+app.get('/', (req, res) => {
+    res.sendFile(path.resolve('frontend/index.html'));
+});
+
+// Worker runner
 function runThreads(threadCount, size, totalTasks) {
     return new Promise((resolve) => {
         let completed = 0;
@@ -19,20 +28,19 @@ function runThreads(threadCount, size, totalTasks) {
             worker.on('message', () => {
                 completed++;
                 if (completed === threadCount) {
-                    const time = (Date.now() - start) / 60000;
+                    const time = (Date.now() - start) / 1000; // seconds
                     resolve(time.toFixed(2));
                 }
             });
         }
     });
 }
-app.get('/', (req, res) => {
-    res.send("Server is alive ");
-});
-app.get('/run', async (req, res) => {
+
+// NEW: POST route for user input
+app.post('/run', async (req, res) => {
+    const { size, totalTasks } = req.body;
+
     const results = [];
-    const size = 300; // scaled size
-    const totalTasks = 50;
 
     for (let t = 1; t <= 8; t++) {
         const time = await runThreads(t, size, totalTasks);

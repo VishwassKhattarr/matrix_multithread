@@ -6,30 +6,50 @@
 </head>
 <body>
 
-<h2>Execution Time vs Threads</h2>
-<button onclick="run()">Run</button>
+<h2>Matrix Multiplication (Multithreading)</h2>
+
+<label>Matrix Size:</label>
+<input type="number" id="size" value="200"><br><br>
+
+<label>Number of Multiplications:</label>
+<input type="number" id="tasks" value="20"><br><br>
+
+<button onclick="run()">Run Experiment</button>
+
+<h3>Results</h3>
+<table border="1" id="table"></table>
 
 <canvas id="chart"></canvas>
 
-<table border="1" id="table"></table>
-
 <script>
+let chart;
+
 async function run() {
-    const res = await fetch('/run');
+    const size = document.getElementById("size").value;
+    const totalTasks = document.getElementById("tasks").value;
+
+    const res = await fetch('/run', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ size: Number(size), totalTasks: Number(totalTasks) })
+    });
+
     const data = await res.json();
 
     const threads = data.map(d => d.threads);
     const times = data.map(d => d.time);
 
     // Table
-    let html = "<tr><th>Threads</th><th>Time</th></tr>";
+    let html = "<tr><th>Threads</th><th>Time (sec)</th></tr>";
     data.forEach(d => {
         html += `<tr><td>${d.threads}</td><td>${d.time}</td></tr>`;
     });
     document.getElementById("table").innerHTML = html;
 
     // Graph
-    new Chart(document.getElementById('chart'), {
+    if (chart) chart.destroy();
+
+    chart = new Chart(document.getElementById('chart'), {
         type: 'line',
         data: {
             labels: threads,
